@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS meals_taken (
 
 -- 3. Create unique constraint to enforce one meal per employee per day
 CREATE UNIQUE INDEX IF NOT EXISTS meals_unique_daily
-ON meals_taken (employee_id, (timestamp::date));
+ON meals_taken (employee_id, DATE_TRUNC('day', timestamp AT TIME ZONE 'UTC'));
 
 -- 4. Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_meals_timestamp ON meals_taken(timestamp DESC);
