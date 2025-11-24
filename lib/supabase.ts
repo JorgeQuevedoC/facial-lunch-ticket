@@ -41,14 +41,18 @@ export async function hasEatenToday(
   employeeId: number,
   timestamp: Date
 ): Promise<boolean> {
-  const dateStr = timestamp.toISOString().split("T")[0];
+  // Use the provided timestamp's local date
+  const year = timestamp.getFullYear();
+  const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+  const day = String(timestamp.getDate()).padStart(2, '0');
+  const dateStr = `${year}-${month}-${day}`;
 
   const { data, error } = await supabase
     .from("meals_taken")
     .select("id")
     .eq("employee_id", employeeId)
-    .gte("timestamp", `${dateStr}T00:00:00Z`)
-    .lt("timestamp", `${dateStr}T23:59:59Z`)
+    .gte("timestamp", `${dateStr}T00:00:00`)
+    .lt("timestamp", `${dateStr}T23:59:59`)
     .limit(1);
 
   if (error) {
@@ -101,7 +105,12 @@ export async function getEmployee(employeeId: number): Promise<Employee | null> 
  * Get all meals taken today
  */
 export async function getTodaysMeals(): Promise<MealTaken[]> {
-  const today = new Date().toISOString().split("T")[0];
+  // Get local date without timezone conversion
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const today = `${year}-${month}-${day}`;
 
   const { data, error } = await supabase
     .from("meals_taken")
@@ -115,12 +124,38 @@ export async function getTodaysMeals(): Promise<MealTaken[]> {
       )
     `
     )
-    .gte("timestamp", `${today}T00:00:00Z`)
-    .lt("timestamp", `${today}T23:59:59Z`)
+    .gte("timestamp", `${today}T00:00:00`)
+    .lt("timestamp", `${today}T23:59:59`)
     .order("timestamp", { ascending: false });
 
   if (error) {
     console.error("Error fetching today's meals:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+/**
+ * Get all meals (no date filter)
+ */
+export async function getAllMeals(): Promise<MealTaken[]> {
+  const { data, error } = await supabase
+    .from("meals_taken")
+    .select(
+      `
+      *,
+      employees (
+        id,
+        name,
+        active
+      )
+    `
+    )
+    .order("timestamp", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching all meals:", error);
     return [];
   }
 

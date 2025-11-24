@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getTodaysMeals } from "@/lib/supabase";
+import { getTodaysMeals, getAllMeals } from "@/lib/supabase";
 import type { MealTaken } from "@/lib/supabase";
 
 export default function Dashboard() {
   const [meals, setMeals] = useState<MealTaken[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [showAll, setShowAll] = useState(false);
 
   const fetchMeals = async () => {
     try {
-      const data = await getTodaysMeals();
+      const data = showAll ? await getAllMeals() : await getTodaysMeals();
       setMeals(data);
       setLastUpdate(new Date());
     } catch (error) {
@@ -31,7 +32,7 @@ export default function Dashboard() {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [showAll]);
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -102,10 +103,33 @@ export default function Dashboard() {
 
         {/* Meals Table */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-800">
-              Comidas de Hoy
+              {showAll ? "Todas las Comidas" : "Comidas de Hoy"}
             </h2>
+            <label className="flex items-center cursor-pointer">
+              <span className="mr-3 text-sm font-medium text-gray-700">
+                Ver todas
+              </span>
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={showAll}
+                  onChange={(e) => setShowAll(e.target.checked)}
+                />
+                <div
+                  className={`block w-14 h-8 rounded-full transition ${
+                    showAll ? "bg-blue-600" : "bg-gray-300"
+                  }`}
+                ></div>
+                <div
+                  className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${
+                    showAll ? "transform translate-x-6" : ""
+                  }`}
+                ></div>
+              </div>
+            </label>
           </div>
 
           {loading ? (
@@ -128,6 +152,11 @@ export default function Dashboard() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Empleado
                     </th>
+                    {showAll && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Fecha
+                      </th>
+                    )}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Hora
                     </th>
@@ -145,6 +174,11 @@ export default function Dashboard() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {meal.employees?.name || "Desconocido"}
                       </td>
+                      {showAll && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(meal.timestamp).toLocaleDateString("es-MX")}
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatTime(meal.timestamp)}
                       </td>

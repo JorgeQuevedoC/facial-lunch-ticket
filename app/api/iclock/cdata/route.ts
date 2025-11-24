@@ -81,11 +81,15 @@ async function processAttendanceEvent(event: AttendanceEvent): Promise<void> {
       return;
     }
 
-    console.log(`[ZKTeco] Meal recorded for employee ${event.pin} - ${employee.name}`);
+    console.log(`[ZKTeco] ✅ Meal successfully saved to database for employee ${event.pin} - ${employee.name}`);
 
     // Print ticket asynchronously (don't wait)
     printTicket(employee, event.timestamp).catch((error) => {
-      console.error(`[Printer] Failed to print ticket for ${event.pin}:`, error);
+      console.error(
+        `[Printer] ⚠️  Failed to print ticket for ${employee.name} (PIN: ${event.pin}). ` +
+        `NOTE: Meal record was successfully saved to database.`,
+        error
+      );
     });
   } catch (error) {
     console.error(`[ZKTeco] Error processing event for PIN ${event.pin}:`, error);
